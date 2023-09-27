@@ -4,4 +4,8 @@ public class HelloWorld {
     public String getMessage(){
         return "HelloWorld";
     }
+
+    public String getMessage(String name) {
+        return "Hello " + name;
+    }
 }

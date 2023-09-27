@@ -16,4 +16,17 @@ public class TddTest {
         Assertions.assertEquals("HelloWorld", message);
     }
 
+    @Test
+    public void testgetMessageName(){
+        // given
+        HelloWorld hello = new HelloWorld();
+
+        // when
+        String message1 = hello.getMessage("insu");
+        String message2 = hello.getMessage("shin");
+
+        // then
+        Assertions.assertEquals("Hello insu", message1);
+        Assertions.assertEquals("Hello shin", message2);
+    }
 }
