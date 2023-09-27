@@ -29,4 +29,11 @@ public class TddTest {
         Assertions.assertEquals("Hello insu", message1);
         Assertions.assertEquals("Hello shin", message2);
     }
+
+    @Test
+    public void testgetMessageNull(){
+        HelloWorld hello = new HelloWorld();
+        String message = hello.getMessage(null);
+        Assertions.assertEquals("Hello World", message);
+    }
 }
