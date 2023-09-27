@@ -1,13 +1,17 @@
 package com.example.tdd;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 public class TddTest {
+    private HelloWorld hello;
+    @BeforeEach
+    public void testFirst(){
+        hello = new HelloWorld();
+    }
+
     @Test
     public void testGetMessage(){
         // given
-        HelloWorld hello = new HelloWorld();
 
         //when
         String message = hello.getMessage();
@@ -19,7 +23,6 @@ public class TddTest {
     @Test
     public void testgetMessageName(){
         // given
-        HelloWorld hello = new HelloWorld();
 
         // when
         String message1 = hello.getMessage("insu");
@@ -32,8 +35,12 @@ public class TddTest {
 
     @Test
     public void testgetMessageNull(){
-        HelloWorld hello = new HelloWorld();
+        // given
+
+        // when
         String message = hello.getMessage(null);
+
+        // then
         Assertions.assertEquals("Hello World", message);
     }
 }
