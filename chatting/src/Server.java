@@ -1,57 +1,87 @@
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 
-public class Server {
-    public static void main(String[] args){
+public class Server{
+    HashMap clients;
+
+    Server(){
+        clients = new HashMap();
+        Collections.synchronizedMap(clients);
+    }
+
+    public void start(){
         ServerSocket serverSocket = null;
+        Socket socket = null;
 
         try{
-            // 서버소켓(7777번 포트로 바인딩) 생성
             serverSocket = new ServerSocket(7777);
-            System.out.println(getTime() + "서버가 준비되었습니다.");
-        } catch(IOException e) {
+            System.out.println("서버가 시작되었습니다.");
+
+            while(true){
+                socket = serverSocket.accept();
+                System.out.println("["+socket.getInetAddress()+":"+socket.getPort()+"]"+"에서 접속하였습니다.");
+                ServerReceiver thread = new ServerReceiver(socket);
+                thread.start();
+            }
+        } catch(Exception e) {
             e.printStackTrace();
         }
+    }
 
-        while(true){
+    void sendToAll(String msg){
+        Iterator it = clients.keySet().iterator();
+
+        while(it.hasNext()){
             try{
-                System.out.println(getTime() + "연결 요청을 기다립니다.");
+                DataOutputStream out = (DataOutputStream) clients.get(it.next());
+                out.writeUTF(msg);
+            } catch(IOException e){}
+        }
+    }
 
-                // 요청 대기 시간 : 5초 설정 -> 접속 요청 없을 시 SocketTimeoutException 발생
-                serverSocket.setSoTimeout(5*1000);
-                Socket socket = serverSocket.accept();
-                System.out.println(getTime()+socket.getInetAddress()+"로부터 연결 요청이 들어왔습니다.");
-                System.out.println(getTime() + "getPort() : "+socket.getPort());
-                System.out.println(getTime() + "getLocalPort : "+socket.getLocalPort());
+    public static void main(String[] args){
+        new Server().start();
+    }
 
-                // 소켓의 출력 스트림 얻기
-                OutputStream out =socket.getOutputStream();
-                DataOutputStream dos = new DataOutputStream(out);
+    class ServerReceiver extends Thread{
+        Socket socket;
+        DataInputStream in;
+        DataOutputStream out;
 
-                // 원격 소켓에 데이터 보내기
-                dos.writeUTF("[Notice] Test Message1 from Server.");
-                System.out.println("데이터 전송 완료");
+        ServerReceiver(Socket socket){
+            this.socket = socket;
+            try{
+                in = new DataInputStream(socket.getInputStream());
+                out = new DataOutputStream(socket.getOutputStream());
+            } catch(IOException e) {}
+        }
 
-                // 스트림과 소켓 닫기
-                dos.close();
-                socket.close();
-            } catch(SocketTimeoutException e){
-                System.out.println("지정된 시간동안 접속 요청이 없어서 서버를 종료합니다.");
-                System.exit(0);
-            } catch(IOException e) {
-                e.printStackTrace();
+        public void run(){
+            String name = "";
+            try{
+                name = in.readUTF();
+                sendToAll("#"+name+"님이 들어오셨습니다.");
+
+                clients.put(name, out);
+                System.out.println("현재 서버접속자 수는 "+ clients.size() +"입니다.");
+
+                while(in != null){
+                    sendToAll(in.readUTF());
+                }
+            } catch(IOException e){
+            } finally {
+                sendToAll("#"+name+"님이 나가셨습니다.");
+                clients.remove(name);
+                System.out.println("["+socket.getInetAddress()+":"+socket.getPort()+"]"+"에서 접속속을 종료하였습니다.");
+                System.out.println("현재 서버접속자 수는 "+ clients.size() +"입니다.");
             }
         }
     }
 
-    static String getTime(){
-        SimpleDateFormat f = new SimpleDateFormat("[hh:mm:ss]");
-        return f.format(new Date());
-    }
 }

@@ -1,44 +1,76 @@
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Scanner;
 
 public class TcpIpClient {
     public static void main(String[] args){
+        if(args.length!=1){
+            System.out.println("USAGE: java TcpIpClient 대화명");
+            System.exit(0);
+        }
 
         try{
             String serverIp = "127.0.0.1";
-
-            System.out.println(getTime() + "서버에 연결중입니다. 서버 IP :" + serverIp);
             // 소켓을 생성하여 연결을 요청합니다.
             Socket socket = new Socket(serverIp, 7777);
+            System.out.println("서버에 연결되었습니다.");
 
-            // 소켓의 입력 스트림을 얻습니다.
-            InputStream in = socket.getInputStream();
-            DataInputStream dis = new DataInputStream(in);
+            Thread sender = new Thread(new ClientSender(socket, args[0]));
+            Thread receiver = new Thread(new ClientReceiver(socket));
 
-            // 소켓으로부터 받은 데이터를 출력
-            System.out.println(getTime() + "서버로부터 받은 메시지 :"+dis.readUTF());
-            System.out.println(getTime() + "연결을 종료합니다.");
-
-            // 스트림과 소켓을 닫습니다.
-            dis.close();
-            socket.close();
-            System.out.println(getTime() + "연결이 종료되었습니다.");
+            sender.start();
+            receiver.start();
         } catch(ConnectException ce){
             ce.printStackTrace();
-        } catch(IOException ie){
-            ie.printStackTrace();
-        } catch(Exception e){
-            e.printStackTrace();
+        } catch(Exception e){}
+    }
+
+    static class ClientSender extends Thread{
+        Socket socket;
+        DataOutputStream out;
+        String name;
+
+        ClientSender(Socket socket, String name){
+            this.socket = socket;
+            try{
+                out = new DataOutputStream(socket.getOutputStream());
+                this.name = name;
+            } catch(Exception e){}
+        }
+
+        public void run(){
+            Scanner scanner = new Scanner(System.in);
+            try{
+                if(out!=null){
+                    out.writeUTF(name);
+                }
+                while(out!=null){
+                    out.writeUTF("["+name+"]"+scanner.nextLine());
+                }
+            } catch(IOException e){}
         }
     }
 
-    static String getTime(){
-        SimpleDateFormat f = new SimpleDateFormat("[hh:mm:ss]");
-        return f.format(new Date());
+    static class ClientReceiver extends Thread{
+        Socket socket;
+        DataInputStream in;
+
+        ClientReceiver(Socket socket){
+            this.socket = socket;
+            try{
+                in = new DataInputStream(socket.getInputStream());
+            } catch(IOException e){}
+        }
+
+        public void run(){
+            while(in!=null){
+                try{
+                    System.out.println(in.readUTF());
+                } catch(IOException e){}
+            }
+        }
     }
 }
