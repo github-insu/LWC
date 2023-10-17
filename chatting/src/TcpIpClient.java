@@ -1,8 +1,6 @@
 import java.io.*;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Scanner;
 
 public class TcpIpClient {
