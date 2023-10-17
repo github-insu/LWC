@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>home</title>
+</head>
+<body>
+
+<h1> Welcome to My Spring Security Test Page!!! </h1>
+
+<div>
+    <h1 th:if="${user != null}">Logged in as:
+        <span th:text="${user.username}"/>
+    </h1>
+    <h1 th:if="${user == null}">Logged in as: required login</h1>
+</div>
+
+<a th:href="@{/login}">로그인 하기</a>
+
+
+<div>
+    <h1> Nice to meet you!</h1>
+</div>
+
+</body>
+</html>
