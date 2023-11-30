@@ -1,0 +1,68 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.0'
+	id 'io.spring.dependency-management' version '1.1.4'
+//	Asciidoctor 플러그인 적용
+	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+}
+
+group = 'insu'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+//Asciidoctor 확장하는 종속성 구성 선언(asciidoctorExt)
+configurations{
+	asciidoctorExt
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	// snippets에서 사용할 속성이 .adoc을 자동으로 가리키도록 구성
+	asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
+	// mockmvc 종속성 추가
+	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+	// MockMvc 대신 REST Assured 사용 시, mockmvc 종속성 비활성화 후 다음 코드 활성화
+	// spring-restdocs-webtestclientspring-restdocs-restassured
+}
+
+// snippetsDir 생성된 조각의 출력 위치 정의
+ext {
+	snippetsDir = file('build/generated-snippets')
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	// test 작업 실행하면 출력이 snippetsDir에 기록된다는 점을 gradle이 인식하게 함
+	outputs.dir snippetsDir
+}
+
+// 작업 구성
+asciidoctor {
+	configurations 'asciidoctorExt'  // 확장에 대한 구성 사용 구성
+	baseDirFollowsSourceFile() // .adoc파일이 .adoc파일을 include 시 동일 경로 지정
+	inputs.dir snippetsDir  // 작업 실행 시 snippetsDir에서 입력을 읽게 됨
+	dependsOn test         // test 문서가 작성되기 전에 테스트가 실행되어 작업
+}
+
+// 중복을 막기 위해 새로운 문서 생성 시 전에 생성한 문서 지우기
+asciidoctor.doFirst{
+	delete file('src/main/resources/static/docs')
+}
+
+task copyDocument(type: Copy){
+	dependsOn asciidoctor
+	from file("build/docs/asciidoc")
+	into file("src/main/resources/static/docs")
+}
+
+build {
+	dependsOn copyDocument
+}
